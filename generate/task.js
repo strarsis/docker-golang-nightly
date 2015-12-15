@@ -25,7 +25,7 @@ var github = new GitHubApi({
 });
 
 // Auth against Github API for higher API rate limits
-var githubApiAuth = optional('./config/github-api-auth');
+var githubApiAuth = optional(path.join(__dirname, './config/github-api-auth'));
 if(githubApiAuth) {
   github.authenticate(githubApiAuth);
 }
