@@ -10,7 +10,7 @@ var Promise       = require('bluebird'),
     optional      = require('optional');
 
 
-var repoFolder = path.join(__dirname, './test-repo');
+var repoFolder = path.join(__dirname, '../.');
 
 var config  = require('./config/config.json');
 var repoId  = config.upstream.github;
