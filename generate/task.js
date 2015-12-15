@@ -12,12 +12,12 @@ var Promise       = require('bluebird'),
 
 var repoFolder = path.join(__dirname, '../.');
 
-var config  = require('./config/config.json');
+var config  = require(path.join(__dirname, './config/config.json'));
 var repoId  = config.upstream.github;
 var gitInfo = config.downstream.user;
 
 // Auth against Github repository for pushing
-var githubRepoAuthCb = require('./config/github-repo-auth');
+var githubRepoAuthCb = require(path.join(__dirname, './config/github-repo-auth'));
 
 
 var github = new GitHubApi({
