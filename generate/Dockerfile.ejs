@@ -1,5 +1,5 @@
 # latest possible stable go for bootstrapping new go (or just ":latest")
-FROM golang:<%= version %>
+FROM golang:latest
 
 # SHA of commit to build
 ENV GOLANG_BUILD_SHA    <%= sha %>
