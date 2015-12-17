@@ -122,7 +122,7 @@ Promise.all([
   }
 
   console.log('Generating Dockerfile...');
-  return renderFile(path.join(repoFolder, '..', 'Dockerfile.ejs'), data)
+  return renderFile(path.join(repoFolder, 'generate', 'Dockerfile.ejs'), data)
   .then(function(DockerfileStr) {
     console.log('Writing Dockerfile...');
     return fs.writeFileAsync(path.join(repoFolder, 'Dockerfile'),  DockerfileStr);
@@ -132,7 +132,7 @@ Promise.all([
      return gitAddCommit(gitRepo, 'Dockerfile', gitInfo, 'Update Dockerfile for nightly build ' + nightlyVersion, buildTagName)
       .then(function() {
         console.log('Pushing to remote origin repository...');
-        return gitPushMaster(gitRepo, 'test', githubRepoAuthCb);
+        return gitPushMaster(gitRepo, 'origin', githubRepoAuthCb);
       });
   });
 })
