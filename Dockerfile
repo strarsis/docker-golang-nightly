@@ -1,10 +1,10 @@
 # latest possible stable go for bootstrapping new go (or just ":latest")
-FROM golang:1.5.2
+FROM golang:1.6beta1
 
 # SHA of commit to build
-ENV GOLANG_BUILD_SHA    a766d8e59c2c43b4c6795404d303b64b9fe69a0f
+ENV GOLANG_BUILD_SHA    ebf64bcc249539b6f66150ee98431301ab6ee679
 # Last stable version prior this commit
-ENV GOLANG_BASE_VERSION 1.5.2
+ENV GOLANG_BASE_VERSION 1.6beta1
 
 ENV GOLANG_BUILD_VERSION $GOLANG_BASE_VERSION-nightly-$GOLANG_BUILD_SHA
 
