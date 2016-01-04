@@ -6,7 +6,7 @@ Public automated build of image on Dockerhub: [golang-nightly](https://hub.docke
 
 Usage
 -----
-One can conveniently build/development with this image.
+One can conveniently build/develop with this image.
 
 Building from an existing github repository into cwd of host system:
 ````
