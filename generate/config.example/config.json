@@ -1,0 +1,20 @@
+{
+  "upstream": {
+    "github": {
+      "user": "user",
+      "repo": "repo"
+    }
+  },
+  "downstream": {
+    "user": {
+      "author": {
+        "name":  "author name",
+        "email": "author email"
+      },
+      "committer": {
+        "name":  "committer name",
+        "email": "committer email"
+      }
+    }
+  }
+}
