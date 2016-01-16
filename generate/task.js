@@ -181,8 +181,8 @@ var gitAddCommit = function(repo, fileToStage, gitInfo, commitMsg, tagName) {
 
   }).then(function(parent) {
 
-    author    = Nodegit.Signature.now(gitInfo.author.name,   gitInfo.author.email);
-    committer = Nodegit.Signature.now(gitInfo.commiter.name, gitInfo.commiter.email);
+    author    = Nodegit.Signature.now(gitInfo.author.name,    gitInfo.author.email);
+    committer = Nodegit.Signature.now(gitInfo.committer.name, gitInfo.committer.email);
 
     return repo.createCommit('HEAD', author, committer, commitMsg, oid, [parent]);
   }).then(function(commitId) {
