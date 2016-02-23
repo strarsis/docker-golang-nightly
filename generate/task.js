@@ -79,6 +79,9 @@ var cleanReleaseName = function(releaseName, repoId) {
 var nightlyVersionStr = function(version, sha) {
   return [ version, '-nightly-', sha ].join('');
 };
+var getBuildTagName = function(version) {
+  return 'build-' + version;
+};
 
 
 var getGitTags = function(gitRepo) {
@@ -114,7 +117,7 @@ Promise.all([
   var nightlyVersion = nightlyVersionStr(data.version, data.sha);
   console.log('Nightly version: ' + nightlyVersion);
 
-  var buildTagName = 'build-' + nightlyVersion;
+  var buildTagName = getBuildTagName(nightlyVersion);
 
   if(tags.indexOf(buildTagName) > -1) {
     console.log('Latest nightly version build tag already exists (' + buildTagName + '). Skipped.');
