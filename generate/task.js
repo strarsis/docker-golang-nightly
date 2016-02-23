@@ -7,7 +7,8 @@ var Promise       = require('bluebird'),
     ejs           = require('ejs'),
     fs            = Promise.promisifyAll(require('fs')),
     path          = require('path'),
-    optional      = require('optional');
+    optional      = require('optional'),
+    ProgressBar   = require('progress');
 
 
 var repoFolder = path.join(__dirname, '../.');
@@ -46,11 +47,21 @@ var getLastCommitSha = function(repoId, github) {
   });
 };
 
-
 var getLastTagVersion = function(repoId, github) {
   console.log('Getting last tag version...');
 
-  return GithubApiTags(repoId, github)
+
+  var gat = new GithubApiTags();
+
+  var bar = new ProgressBar('Fetching commit :current/:total [:bar] :percent :etas', { total: 10 });
+  var tagUpdated = function() {
+    bar.total = this.tagsAll * 2;
+    bar.tick();
+  };
+  gat.on('tag',        tagUpdated);
+  gat.on('tag-commit', tagUpdated);
+
+  return gat.fetch(repoId, github)
   .then(function(tags) {
     var tagsSortedDateDesc = tags.sort(byAuthorDateAsc).reverse();
     var lastRelease        = tagsSortedDateDesc[0];
