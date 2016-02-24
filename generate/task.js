@@ -142,12 +142,19 @@ Promise.all([
     return fs.writeFileAsync(path.join(repoFolder, 'Dockerfile'),  DockerfileStr);
   })
   .then(function() {
-     console.log('Committing + tagging new Dockerfile...');
-     return gitAddCommit(gitRepo, 'Dockerfile', gitInfo, 'Update Dockerfile for nightly build ' + nightlyVersion, buildTagName)
-      .then(function() {
-        console.log('Pushing to remote origin repository...');
-        return gitPushMaster(gitRepo, 'origin', githubRepoAuthCb);
-      });
+    console.log('Committing + tagging new Dockerfile...');
+    return gitAddCommit(gitRepo, 'Dockerfile', gitInfo, 'Update Dockerfile for nightly build ' + nightlyVersion, buildTagName);
+  })
+  .then(function() {
+    console.log('Pushing to remote origin repository...');
+    return gitRepo.getRemote('origin');
+  })
+  .then(function(gitRemote) {
+    return gitPushRefSpecs(
+      gitRemote,
+      [ 'master', buildTagName ],
+      githubRepoAuthCb
+    );
   });
 })
 .then(function() {
@@ -210,23 +217,24 @@ var gitAddCommit = function(repo, fileToStage, gitInfo, commitMsg, tagName) {
   });
 };
 
-var gitPushMaster = function(repo, remoteName, githubRepoAuthCb) {
-  return repo.getRemote(remoteName)
-  .then(function(remoteResult) {
+var tagsToRefSpecs = function(tags) {
+  var refSpecs     = [];
+  for(tagIndex in tags) {
+    var tag = tags[ tagIndex ];
+    var refSpecStr = 'refs/tags/' + tag + ':' + 'refs/tags/' + tag;
+    refSpecs.push(refSpecStr);
+  }
+  return refSpecs;
+};
 
-    console.log('Remote loaded.');
-    remote = remoteResult;
-
-    return remote.push(
-             ['refs/heads/master:refs/heads/master'],
-             {
-               options: 'tags',
-               callbacks: {
-                 credentials: githubRepoAuthCb
-               }
-             }
-           );
-  }).then(function() {
-    console.log('Remote pushed.')
-  });
+var gitPushRefSpecs = function(remote, refSpecs, githubRepoAuthCb) {
+  return remote.push(
+    refSpecs,
+    {
+      options: 'tags',
+      callbacks: {
+        credentials: githubRepoAuthCb
+      }
+    }
+  );
 };
