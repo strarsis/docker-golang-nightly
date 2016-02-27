@@ -162,7 +162,7 @@ Promise.all([
 var refSpecMaster = 'refs/heads/master:refs/heads/maste';
 var gitPushAll = function(gitRepo) {
   console.log('Pushing to remote origin repository...');
-  return getGitTags(gitRepo)
+  return getGitTags(gitRepo) // load tags anew (if new have been added)
   .then(function(gitTags) {
     return gitRepo.getRemote('origin')
     .then(function(gitRemote) {
