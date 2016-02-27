@@ -132,30 +132,24 @@ Promise.all([
 
   if(tags.indexOf(buildTagName) > -1) {
     console.log('Latest nightly version build tag already exists (' + buildTagName + '). Skipped.');
-    return false;
+  } else {
+    console.log('Generating Dockerfile...');
+    return renderFile(path.join(repoFolder, 'generate', 'Dockerfile.ejs'), data)
+    .then(function(DockerfileStr) {
+      console.log('Writing Dockerfile...');
+      return fs.writeFileAsync(path.join(repoFolder, 'Dockerfile'),  DockerfileStr);
+    })
+    .then(function() {
+      console.log('Committing + tagging new Dockerfile...');
+      return gitAddCommit(gitRepo, 'Dockerfile', gitInfo, 'Update Dockerfile for nightly build ' + nightlyVersion, buildTagName)
+      .then(function() {
+
+        return gitPushAll(gitRepo);
+      });
+    });
   }
 
-  console.log('Generating Dockerfile...');
-  return renderFile(path.join(repoFolder, 'generate', 'Dockerfile.ejs'), data)
-  .then(function(DockerfileStr) {
-    console.log('Writing Dockerfile...');
-    return fs.writeFileAsync(path.join(repoFolder, 'Dockerfile'),  DockerfileStr);
-  })
-  .then(function() {
-    console.log('Committing + tagging new Dockerfile...');
-    return gitAddCommit(gitRepo, 'Dockerfile', gitInfo, 'Update Dockerfile for nightly build ' + nightlyVersion, buildTagName);
-  })
-  .then(function() {
-    console.log('Pushing to remote origin repository...');
-    return gitRepo.getRemote('origin');
-  })
-  .then(function(gitRemote) {
-    return gitPushRefSpecs(
-      gitRemote,
-      [ 'master', buildTagName ],
-      githubRepoAuthCb
-    );
-  });
+  return gitPushAll(gitRepo);
 })
 .then(function() {
   console.log('Done.');
@@ -164,6 +158,22 @@ Promise.all([
   console.log('Error: ' + err);
 });
 
+
+var refSpecMaster = 'refs/heads/master:refs/heads/maste';
+var gitPushAll = function(gitRepo) {
+  console.log('Pushing to remote origin repository...');
+  return getGitTags(gitRepo)
+  .then(function(gitTags) {
+    return gitRepo.getRemote('origin')
+    .then(function(gitRemote) {
+      return gitPushRefSpecs(
+        gitRemote,
+        tagsToRefSpecs(gitTags).concat(refSpecMaster),
+        githubRepoAuthCb
+      );
+    });
+  });
+};
 
 var renderFile = function(templatePath, data) {
   return fs.readFileAsync(templatePath, { encoding: 'utf8' })
