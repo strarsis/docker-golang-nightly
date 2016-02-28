@@ -90,8 +90,9 @@ var cleanReleaseName = function(releaseName, repoId) {
 var nightlyVersionStr = function(version, sha) {
   return [ version, '-nightly-', sha ].join('');
 };
+var buildTagPrefix = 'build-';
 var getBuildTagName = function(version) {
-  return 'build-' + version;
+  return buildTagPrefix + version;
 };
 
 
@@ -158,17 +159,21 @@ Promise.all([
   console.log('Error: ' + err);
 });
 
+var regexpBuildTag = new RegExp('^' + buildTagPrefix);
+var onlyBuildTag   = function(tag) {
+  return regexpBuildTag.test(tag);
+};
 
-var refSpecMaster = 'refs/heads/master:refs/heads/maste';
 var gitPushAll = function(gitRepo) {
   console.log('Pushing to remote origin repository...');
   return getGitTags(gitRepo) // load tags anew (if new have been added)
   .then(function(gitTags) {
+    var gitTagsBuild = gitTags.filter(onlyBuildTag);
     return gitRepo.getRemote('origin')
     .then(function(gitRemote) {
       return gitPushRefSpecs(
         gitRemote,
-        tagsToRefSpecs(gitTags).concat(refSpecMaster),
+        tagsToRefSpecs(gitTagsBuild),
         githubRepoAuthCb
       );
     });
