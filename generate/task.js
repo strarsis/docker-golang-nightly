@@ -15,7 +15,7 @@ var repoFolder = path.join(__dirname, '../.');
 
 var config  = require(path.join(__dirname, './config/config.json'));
 var repoId  = config.upstream.github;
-var gitInfo = config.downstream.user;
+var gitInfo = config.downstream.github.user;
 
 // Auth against Github repository for pushing
 var githubRepoAuthCb = require(path.join(__dirname, './config/github-repo-auth'));

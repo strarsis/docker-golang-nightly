@@ -6,14 +6,16 @@
     }
   },
   "downstream": {
-    "user": {
-      "author": {
-        "name":  "author name",
-        "email": "author email"
-      },
-      "committer": {
-        "name":  "committer name",
-        "email": "committer email"
+    "github": {
+      "user": {
+        "author": {
+          "name":  "author name",
+          "email": "author email"
+         },
+        "committer": {
+          "name":  "committer name",
+          "email": "committer email"
+        }
       }
     }
   }
