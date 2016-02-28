@@ -53,13 +53,15 @@ var getLastTagVersion = function(repoId, github) {
 
   var gat = new GithubApiTags();
 
-  var bar = new ProgressBar('Fetching commit :current/:total [:bar] :percent :etas', { total: 10 });
-  var tagUpdated = function() {
-    bar.total = this.tagsAll * 2;
+  var bar = new ProgressBar('Fetching full tag :current/:total [:bar] :percent :etas', { total: 100 });
+  var pageFetched = function() {
+    bar.total = this.tagsAll;
+  };
+  var tagFetched = function() {
     bar.tick();
   };
-  gat.on('tag',        tagUpdated);
-  gat.on('tag-commit', tagUpdated);
+  gat.on('page', pageFetched);
+  gat.on('tag',  tagFetched);
 
   return gat.fetch(repoId, github)
   .then(function(tags) {
