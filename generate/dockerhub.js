@@ -2,8 +2,6 @@ var dockerHubApi  = require('docker-hub-api'), // (supports promises)
     moment        = require('moment'),
     Promise       = require('bluebird');
 
-var replay = require('replay');
-
 
 var dockerHubAuth = require('./config/docker-hub-auth');
 
@@ -13,6 +11,7 @@ var dockerHubInfo = {
   repository: config.downstream.dockerhub.repo
 };
 
+// test
 var buildTagName  = 'build-1.6-nightly-71cc445cf92dd3014e8b382809ed1b9c077e7973';
 
 
