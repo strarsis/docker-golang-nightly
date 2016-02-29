@@ -166,6 +166,7 @@ var onlyBuildTag   = function(tag) {
   return regexpBuildTag.test(tag);
 };
 
+var refSpecMaster = 'refs/heads/master:refs/heads/master';
 var gitPushAll = function(gitRepo) {
   console.log('Pushing to remote origin repository...');
   return getGitTags(gitRepo) // load tags anew (if new have been added)
@@ -175,7 +176,7 @@ var gitPushAll = function(gitRepo) {
     .then(function(gitRemote) {
       return gitPushRefSpecs(
         gitRemote,
-        tagsToRefSpecs(gitTagsBuild),
+        tagsToRefSpecs(gitTagsBuild).concat(refSpecMaster),
         githubRepoAuthCb
       );
     });
