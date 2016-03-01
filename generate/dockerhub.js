@@ -188,7 +188,7 @@ dockerHubApi.login(dockerHubAuth.username, dockerHubAuth.password)
 
     }),
 
-    return dockerHubApi.tags(dockerHubInfo.username, dockerHubInfo.repository)
+    dockerHubApi.tags(dockerHubInfo.username, dockerHubInfo.repository)
     .then(function(tags) {
       var existingTags = tags.filter(function(tag) {
         return tag.name == buildTagName;
