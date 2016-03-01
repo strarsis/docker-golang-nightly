@@ -12,7 +12,7 @@ var dockerHubInfo = {
 };
 
 // test
-var buildTagName  = 'build-1.6-nightly-50674532719cad7bbdbcce5027f3510633eeed73';
+var buildTagName  = 'build-1.6-nightly-5fea2ccc77eb50a9704fa04b7c61755fe34e1d95';
 
 
 // from task.js
@@ -188,8 +188,11 @@ dockerHubApi.login(dockerHubAuth.username, dockerHubAuth.password)
 
     }),
 
-    fetchLastTaggedBuildTagname(dockerHubApi, dockerHubInfo.username, dockerHubInfo.repository)
-    .then(function(existingTag) {
+    return dockerHubApi.tags(dockerHubInfo.username, dockerHubInfo.repository)
+    .then(function(tags) {
+      var existingTags = tags.filter(function(tag) {
+        return tag.name == buildTagName;
+      });
 
       if(existingTag) {
         console.log("Tag '" + buildTagName + "' had been already built.");
@@ -248,12 +251,7 @@ var fetchLastLatestBuildTagname = function(dockerHubApi, username, repository) {
   });
 };
 
-var fetchLastTaggedBuildTagname = function(dockerHubApi, username, repository) {
-  return dockerHubApi.tags(username, repository)
-  .then(function(tags) {
-    var existingTags = tags.filter(function(tag) {
-      return tag.name == buildTagName;
-    });
-    return existingTags;
-  });
+
+var dockerHubPendingBuilds = function(username, repository) {
+  
 };
