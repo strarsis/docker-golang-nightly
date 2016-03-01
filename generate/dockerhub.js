@@ -193,6 +193,7 @@ dockerHubApi.login(dockerHubAuth.username, dockerHubAuth.password)
       var existingTags = tags.filter(function(tag) {
         return tag.name == buildTagName;
       });
+      var existingTag  = existingTags[0];
 
       if(existingTag) {
         console.log("Tag '" + buildTagName + "' had been already built.");
