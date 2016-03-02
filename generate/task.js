@@ -159,6 +159,7 @@ function(sha, version, gitRepoAndGitTags) {
 
   return gitPushAll(gitRepo)
   .then(function() {
+    console.log('Ensuring Dockerhub builds.');
     return dockerHubBuilder.handleRepository(dockerHubAuth, dockerHubInfo, buildTagName);
   });
 })
