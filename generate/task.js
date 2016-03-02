@@ -118,15 +118,15 @@ var openGitRepoAndGetGitTags = function(repoFolder) {
   });
 };
 
-Promise.all([
+Promise.join(
   getLastCommitSha(repoId, github),
   getLastTagVersion(repoId, github),
-  openGitRepoAndGetGitTags(repoFolder)
-])
-.then(function(args) {
-  var data    = { sha: args[0], version: args[1] };
-  var gitRepo = args[2][0];
-  var tags    = args[2][1];
+  openGitRepoAndGetGitTags(repoFolder),
+
+function(sha, version, gitRepoAndGitTags) {
+  var data    = { sha: sha, version: version };
+  var gitRepo = gitRepoAndGitTags[0];
+  var tags    = gitRepoAndGitTags[1];
 
   var nightlyVersion = nightlyVersionStr(data.version, data.sha);
   console.log('Nightly version: ' + nightlyVersion);
