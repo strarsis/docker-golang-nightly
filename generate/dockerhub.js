@@ -3,6 +3,7 @@ var dockerHubApi = require('docker-hub-api'), // (supports promises)
     Promise      = require('bluebird'),
     helper       = require('./helper');
 
+/*
 var dockerHubAuth = require('./config/docker-hub-auth');
 
 var config        = require('./config/config');
@@ -10,9 +11,10 @@ var dockerHubInfo = {
   username:   config.downstream.dockerhub.user,
   repository: config.downstream.dockerhub.repo
 };
+*/
 
 // test
-var buildTagName  = 'build-1.6-nightly-5fea2ccc77eb50a9704fa04b7c61755fe34e1d95';
+// var buildTagName  = 'build-1.6-nightly-5fea2ccc77eb50a9704fa04b7c61755fe34e1d95';
 
 
 const BUILD_STATUS_SUCCEEDED       = 10;
@@ -286,30 +288,30 @@ var isThereTaggedBuild = function(dockerHubApi, username, repository, buildsSort
 };
 
 
-dockerHubApi.login(dockerHubAuth.username, dockerHubAuth.password)
-.then(function() {
+var checkRepository = function(dockerHubApi, dockerHubAuth, dockerHubInfo, buildTagName) {
 
-  // note that build history doesn't contain pending builds nor there being a way yet to list pending builds
-  // this applies to both, tagged and 'latest' builds
+  return dockerHubApi.login(dockerHubAuth.username, dockerHubAuth.password)
+  .then(function() {
 
-  // for checking tagged builds alone, list of tags can be used
-  // for checking 'latest' builds, only buildDetails can be used,
-  //   which may be removed when the buildTag settings are removed for 'latest' (master)
+    // note that build history doesn't contain pending builds nor there being a way yet to list pending builds
+    // this applies to both, tagged and 'latest' builds
 
-  return dockerHubApi.buildHistory(dockerHubInfo.username, dockerHubInfo.repository);
-})
-.then(function(builds) {
+    // for checking tagged builds alone, list of tags can be used
+    // for checking 'latest' builds, only buildDetails can be used,
+    //   which may be removed when the buildTag settings are removed for 'latest' (master)
 
-  var buildsSortedDesc = builds.sort(byCreatedDateAsc).reverse(); // (desc)
+    return dockerHubApi.buildHistory(dockerHubInfo.username, dockerHubInfo.repository);
+  })
+  .then(function(builds) {
 
-  return Promise.all([
-    checkLatestBuild(dockerHubApi, dockerHubInfo.username, dockerHubInfo.repository, buildsSortedDesc, buildTagName),
-    checkTaggedBuild(dockerHubApi, dockerHubInfo.username, dockerHubInfo.repository, buildsSortedDesc, buildTagName)
-  ]);
-})
-.then(function() {
-  console.log('Done.');
-})
-.catch(function(err) {
-  console.log('Error (g): ' + err);
-});
+    var buildsSortedDesc = builds.sort(byCreatedDateAsc).reverse(); // (desc)
+
+    return Promise.all([
+      checkLatestBuild(dockerHubApi, dockerHubInfo.username, dockerHubInfo.repository, buildsSortedDesc, buildTagName),
+      checkTaggedBuild(dockerHubApi, dockerHubInfo.username, dockerHubInfo.repository, buildsSortedDesc, buildTagName)
+    ]);
+  });
+
+};
+
+module.exports.checkRepository = checkRepository;
