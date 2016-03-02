@@ -8,7 +8,8 @@ var Promise       = require('bluebird'),
     fs            = Promise.promisifyAll(require('fs')),
     path          = require('path'),
     optional      = require('optional'),
-    ProgressBar   = require('progress');
+    ProgressBar   = require('progress'),
+    helper        = require('./helper');
 
 
 var repoFolder = path.join(__dirname, '../.');
@@ -89,14 +90,6 @@ var cleanReleaseName = function(releaseName, repoId) {
   return releaseName.replace(clRx, '');
 };
 
-var nightlyVersionStr = function(version, sha) {
-  return [ version, '-nightly-', sha ].join('');
-};
-var buildTagPrefix = 'build-';
-var getBuildTagName = function(version) {
-  return buildTagPrefix + version;
-};
-
 
 var getGitTags = function(gitRepo) {
   return Nodegit.Tag.list(gitRepo);
@@ -128,10 +121,10 @@ function(sha, version, gitRepoAndGitTags) {
   var gitRepo = gitRepoAndGitTags[0];
   var tags    = gitRepoAndGitTags[1];
 
-  var nightlyVersion = nightlyVersionStr(data.version, data.sha);
+  var nightlyVersion = helper.nightlyVersionStr(data.version, data.sha);
   console.log('Nightly version: ' + nightlyVersion);
 
-  var buildTagName = getBuildTagName(nightlyVersion);
+  var buildTagName = helper.getBuildTagName(nightlyVersion);
 
   if(tags.indexOf(buildTagName) > -1) {
     console.log('Latest nightly version build tag already exists (' + buildTagName + '). Skipped.');
@@ -161,7 +154,7 @@ function(sha, version, gitRepoAndGitTags) {
   console.log('Error: ' + err);
 });
 
-var regexpBuildTag = new RegExp('^' + buildTagPrefix);
+var regexpBuildTag = new RegExp('^' + helper.buildTagPrefix);
 var onlyBuildTag   = function(tag) {
   return regexpBuildTag.test(tag);
 };

@@ -1,7 +1,7 @@
-var dockerHubApi  = require('docker-hub-api'), // (supports promises)
-    moment        = require('moment'),
-    Promise       = require('bluebird');
-
+var dockerHubApi = require('docker-hub-api'), // (supports promises)
+    moment       = require('moment'),
+    Promise      = require('bluebird'),
+    helper       = require('./helper');
 
 var dockerHubAuth = require('./config/docker-hub-auth');
 
@@ -13,17 +13,6 @@ var dockerHubInfo = {
 
 // test
 var buildTagName  = 'build-1.6-nightly-5fea2ccc77eb50a9704fa04b7c61755fe34e1d95';
-
-
-// from task.js
-var nightlyVersionStr = function(version, sha) {
-  return [ version, '-nightly-', sha ].join('');
-};
-var buildTagPrefix = 'build-';
-var getBuildTagName = function(version) {
-  return buildTagPrefix + version;
-};
-// ----
 
 
 const BUILD_STATUS_SUCCEEDED       = 10;
@@ -111,8 +100,8 @@ var tagNameFromBuildDetails = function(buildDetails) {
   var version    = getVersionFromDockerfile(dockerfile);
   var sha        = getCommitShaFromDockerfile(dockerfile);
 
-  var nightlyVersion = nightlyVersionStr(version, sha);
-  var buildTagName   = getBuildTagName(nightlyVersion);
+  var nightlyVersion = helper.nightlyVersionStr(version, sha);
+  var buildTagName   = helper.getBuildTagName(nightlyVersion);
 
   return buildTagName;
 };
@@ -313,7 +302,7 @@ dockerHubApi.login(dockerHubAuth.username, dockerHubAuth.password)
 
   var buildsSortedDesc = builds.sort(byCreatedDateAsc).reverse(); // (desc)
 
-  return Promise.join([
+  return Promise.all([
     checkLatestBuild(dockerHubApi, dockerHubInfo.username, dockerHubInfo.repository, buildsSortedDesc, buildTagName),
     checkTaggedBuild(dockerHubApi, dockerHubInfo.username, dockerHubInfo.repository, buildsSortedDesc, buildTagName)
   ]);
