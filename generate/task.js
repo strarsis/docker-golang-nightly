@@ -1,32 +1,44 @@
-var Promise       = require('bluebird'),
-    GitHubApi     = require('github'),
-    objectAssign  = require('object-assign'),
-    GithubApiTags = require('github-api-tags-full'),
-    moment        = require('moment'),
-    Nodegit       = require('nodegit'),
-    ejs           = require('ejs'),
-    fs            = Promise.promisifyAll(require('fs')),
-    path          = require('path'),
-    optional      = require('optional'),
-    ProgressBar   = require('progress'),
-    helper        = require('./helper');
+var Promise          = require('bluebird'),
+    GitHubApi        = require('github'),
+    objectAssign     = require('object-assign'),
+    GithubApiTags    = require('github-api-tags-full'),
+    moment           = require('moment'),
+    Nodegit          = require('nodegit'),
+    ejs              = require('ejs'),
+    fs               = Promise.promisifyAll(require('fs')),
+    path             = require('path'),
+    optional         = require('optional'),
+    ProgressBar      = require('progress'),
+    helper           = require('./helper'),
+    dockerHubBuilder = require('./docker-hub-builder');
 
 
 var repoFolder = path.join(__dirname, '../.');
 
-var config  = require(path.join(__dirname, './config/config.json'));
-var repoId  = config.upstream.github;
-var gitInfo = config.downstream.github.user;
+var config        = require(path.join(__dirname, './config/config.json'));
 
-// Auth against Github repository for pushing
+// Upstream Github repo
+var repoId        = config.upstream.github;
+
+// Git(hub) info for repository / committing/authoring
+var gitInfo       = config.downstream.github.user;
+// Auth against Github account for pushing to repository
 var githubRepoAuthCb = require(path.join(__dirname, './config/github-repo-auth'));
+
+// Dockerhub repository info
+var dockerHubInfo = { // same named 'user' + 'repo' field in config for all services
+  username:   config.downstream.dockerhub.user,
+  repository: config.downstream.dockerhub.repo
+};
+// Auth against Dockerhub account for managing/triggering builds
+var dockerHubAuth = require(path.join(__dirname, './config/docker-hub-auth.json'));
 
 
 var github = new GitHubApi({
   version: '3.0.0'
 });
 
-// Auth against Github API for higher API rate limits
+// (Optional) Auth against Github API for higher API rate limits
 var githubApiAuth = optional(path.join(__dirname, './config/github-api-auth'));
 if(githubApiAuth) {
   github.authenticate(githubApiAuth);
@@ -145,7 +157,10 @@ function(sha, version, gitRepoAndGitTags) {
     });
   }
 
-  return gitPushAll(gitRepo);
+  return gitPushAll(gitRepo)
+  .then(function() {
+    return dockerHubBuilder.handleRepository(dockerHubAuth, dockerHubInfo, buildTagName);
+  });
 })
 .then(function() {
   console.log('Done.');

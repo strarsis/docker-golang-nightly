@@ -112,7 +112,7 @@ var tagNameFromBuildDetails = function(buildDetails) {
 var reuseTagBuild       = function(username, repository, details) {
   var existingBuildTags = {};
 
-  return dockerHubApi.buildSettings(dockerHubInfo.username, dockerHubInfo.repository)
+  return dockerHubApi.buildSettings(username, repository)
   .then(function(buildSettings) {
 
     // existing build tag, e.g. build failed or hadn't been triggered yet - but build tag setting already exists
@@ -123,7 +123,7 @@ var reuseTagBuild       = function(username, repository, details) {
       return;
     }
 
-    return dockerHubApi.createBuildTag(dockerHubInfo.username, dockerHubInfo.repository, details);
+    return dockerHubApi.createBuildTag(username, repository, details);
   })
   .then(function(createdBuildTag) {
 
@@ -137,18 +137,18 @@ var reuseTagBuild       = function(username, repository, details) {
     // adjust details/settings to new details/settings
     // method saveBuildTag(...) not implemented yet!)
     // master branch (for 'latest') never requires modification
-    //return dockerHubApi.saveBuildTag(dockerHubInfo.username, dockerHubInfo.repository, buildTag.id, details);
+    //return dockerHubApi.saveBuildTag(username, repository, buildTag.id, details);
 
     // trigger the build tag
     // as long as the build process is running, triggering is idempotent
-    return dockerHubApi.triggerBuild(dockerHubInfo.username, dockerHubInfo.repository, details);
+    return dockerHubApi.triggerBuild(username, repository, details);
   })
   .then(function() {
     // clean up eventually existing duplicate build tags
     // one build tag had been removed from the array, so this is only the duplicated rest
     if(existingBuildTags && existingBuildTags.length > 0) {
       return Promise.map(existingBuildTags, function(existingBuildTag) {
-        return dockerHubApi.deleteBuildTag(dockerHubInfo.username, dockerHubInfo.repository, existingBuildTag.id);
+        return dockerHubApi.deleteBuildTag(username, repository, existingBuildTag.id);
       });
     }
   })
@@ -171,14 +171,14 @@ var reuseTagBuild       = function(username, repository, details) {
 const CHECK_BUILD_OK         =  10;
 const CHECK_BUILD_OK_PENDING =   2;
 const CHECK_BUILD_NOTFOUND   =  -1;
-const CHECK_BUILD_OUTDATED   =  -2;
+const CHECK_BUILD_DIFFER     =  -2;
 
 
-var checkLatestBuild = function(username, repository, buildsSortedDesc, buildTagName) {
-  return isThereLatestBuild(dockerHubApi, username, repository, buildsSortedDesc, buildTagName)
+var handleLatestBuild = function(username, repository, buildsSortedDesc, buildTagName) {
+  return checkLatestBuild(username, repository, buildsSortedDesc, buildTagName)
   .then(function(result) {
-    if(result == CHECK_BUILD_OK || result == CHECK_BUILD_OK_PENDING) {
-      if(result == CHECK_BUILD_OK_PENDING) {
+    if(result.status == CHECK_BUILD_OK || result.status == CHECK_BUILD_OK_PENDING) {
+      if(result.status == CHECK_BUILD_OK_PENDING) {
         console.log("Last 'latest' build had been already triggered + is pending, skipped.");
         return;
       }
@@ -186,13 +186,13 @@ var checkLatestBuild = function(username, repository, buildsSortedDesc, buildTag
       return;
     }
     // Trigger with master branch for 'latest' build
-    console.log("Last 'latest' build uses not recent enough build tag (latest: '" + buildTagNameLastLatestBuild + "', last tag: '" + buildTagName + "'.");
-    return triggerLatestBuild(dockerHubApi, username, repository);
+    console.log("Last 'latest' build uses not recent enough build tag (latest: '" + result.latestBuildTagName + "', last tag: '" + buildTagName + "'.");
+    return triggerLatestBuild(username, repository);
   });
 };
 
 var triggerLatestBuild = function(username, repository) {
-  return reuseTagBuild(dockerHubApi, username, repository, {
+  return reuseTagBuild(username, repository, {
     name:        'latest',
     source_name: 'master',
     source_type: BUILD_TAG_SOURCE_TYPE_BRANCH
@@ -205,11 +205,11 @@ var triggerLatestBuild = function(username, repository) {
   });
 };
 
-var checkTaggedBuild = function(username, repository, buildsSortedDesc, buildTagName) {
-  return isThereTaggedBuild(dockerHubApi, username, repository, buildsSortedDesc, buildTagName)
+var handleTaggedBuild = function(username, repository, buildsSortedDesc, buildTagName) {
+  return checkTaggedBuild(username, repository, buildsSortedDesc, buildTagName)
   .then(function(result) {
-    if(result == CHECK_BUILD_OK || result == CHECK_BUILD_OK_PENDING) {
-      if(result == CHECK_BUILD_OK_PENDING) {
+    if(result.status == CHECK_BUILD_OK || result.status == CHECK_BUILD_OK_PENDING) {
+      if(result.status == CHECK_BUILD_OK_PENDING) {
         //console.log("Tagged build '" + buildTagName + "' had been already triggered + is pending, skipped.");
         return;
       }
@@ -218,12 +218,12 @@ var checkTaggedBuild = function(username, repository, buildsSortedDesc, buildTag
     }
     // Trigger tagged build
     console.log("Tagged build '" + buildTagName + "' hadn't been built yet.");
-    return triggerTaggedBuild(dockerHubApi, username, repository, buildTagName);
+    return triggerTaggedBuild(username, repository, buildTagName);
   });
 };
 
 var triggerTaggedBuild = function(username, repository, buildTagName) {
-  return reuseTagBuild(dockerHubApi, username, repository, {
+  return reuseTagBuild(username, repository, {
     source_name: buildTagName,
     source_type: BUILD_TAG_SOURCE_TYPE_TAG
   })
@@ -235,7 +235,7 @@ var triggerTaggedBuild = function(username, repository, buildTagName) {
   });
 };
 
-var isThereLatestBuild = function(username, repository, buildsSortedDesc) {
+var checkLatestBuild = function(username, repository, buildsSortedDesc, buildTagName) {
   // - 'latest' build
   var passingBuildsSortedDesc = buildsSortedDesc.filter(isPassingBuild);
 
@@ -244,46 +244,46 @@ var isThereLatestBuild = function(username, repository, buildsSortedDesc) {
   var latestBuilds    = findBuildsByTagName(passingBuildsSortedDesc, 'latest');
   var lastLatestBuild = latestBuilds[0];
 
-  return dockerHubApi.buildDetails(dockerHubInfo.username, dockerHubInfo.repository, lastLatestBuild.build_code)
+  return dockerHubApi.buildDetails(username, repository, lastLatestBuild.build_code)
   .then(function(lastLatestBuildDetails) {
     var lastLatestBuildTagName = tagNameFromBuildDetails(lastLatestBuildDetails)
     if(lastLatestBuildTagName == buildTagName) {
 
       if(isPendingBuild(lastLatestBuild)) {
-        return CHECK_BUILD_OK_PENDING;
+        return { status: CHECK_BUILD_OK_PENDING };
       }
 
-      return CHECK_BUILD_OK;
+      return { status: CHECK_BUILD_OK };
     }
 
-    return CHECK_BUILD_OUTDATED;
+    return { status: CHECK_BUILD_DIFFER, latestBuildTagName: lastLatestBuildTagName };
   })
 };
 
-var isThereTaggedBuild = function(username, repository, buildsSortedDesc, buildTagName) {
+var checkTaggedBuild = function(username, repository, buildsSortedDesc, buildTagName) {
   // - tagged build
   // (check for tagged builds can use tags)
 
   // only pending builds for checking as tags from successful builds may have been deleted
   var pendingBuildsSortedDesc = buildsSortedDesc.filter(isPendingBuild);
 
-  return dockerHubApi.tags(dockerHubInfo.username, dockerHubInfo.repository)
+  return dockerHubApi.tags(username, repository)
   .then(function(tags) {
 
     var taggedTags = findTagsByName(tags, buildTagName);
     var taggedTag  = taggedTags[0]; // (tags are unique)
     if(taggedTag) {
-      return CHECK_BUILD_OK;
+      return { status: CHECK_BUILD_OK };
     }
 
     // also check whether the tagged build is still pending
     var taggedPendingBuilds    = findBuildsByTagName(pendingBuildsSortedDesc, buildTagName);
     var lastTaggedPendingBuild = taggedPendingBuilds[0];
     if(lastTaggedPendingBuild) {
-      return CHECK_BUILD_OK_PENDING;
+      return { status: CHECK_BUILD_OK_PENDING };
     }
 
-    return CHECK_BUILD_NOTFOUND;
+    return { status: CHECK_BUILD_NOTFOUND };
   })
 };
 
@@ -307,8 +307,8 @@ var handleRepository = function(dockerHubAuth, dockerHubInfo, buildTagName) {
     var buildsSortedDesc = builds.sort(byCreatedDateAsc).reverse(); // (desc)
 
     return Promise.all([
-      checkLatestBuild(dockerHubInfo.username, dockerHubInfo.repository, buildsSortedDesc, buildTagName),
-      checkTaggedBuild(dockerHubInfo.username, dockerHubInfo.repository, buildsSortedDesc, buildTagName)
+      handleLatestBuild(dockerHubInfo.username, dockerHubInfo.repository, buildsSortedDesc, buildTagName),
+      handleTaggedBuild(dockerHubInfo.username, dockerHubInfo.repository, buildsSortedDesc, buildTagName)
     ]);
   });
 
