@@ -288,7 +288,7 @@ var isThereTaggedBuild = function(dockerHubApi, username, repository, buildsSort
 };
 
 
-var checkRepository = function(dockerHubApi, dockerHubAuth, dockerHubInfo, buildTagName) {
+var handleRepository = function(dockerHubApi, dockerHubAuth, dockerHubInfo, buildTagName) {
 
   return dockerHubApi.login(dockerHubAuth.username, dockerHubAuth.password)
   .then(function() {
