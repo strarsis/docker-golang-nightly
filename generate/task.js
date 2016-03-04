@@ -12,6 +12,7 @@ var Promise          = require('bluebird'),
     helper           = require('./helper'),
     dockerHubBuilder = require('./docker-hub-builder');
 
+//var replay = require('replay');
 
 var repoFolder = path.join(__dirname, '../.');
 
@@ -152,16 +153,20 @@ function(sha, version, gitRepoAndGitTags) {
       return gitAddCommit(gitRepo, 'Dockerfile', gitInfo, 'Update Dockerfile for nightly build ' + nightlyVersion, buildTagName)
       .then(function() {
 
-        return gitPushAll(gitRepo);
+        return gitPushAll(gitRepo)
+        .then(function() {
+          console.log('Ensuring Dockerhub builds.');
+          return dockerHubBuilder.handleRepository(dockerHubAuth, dockerHubInfo, buildTagName);
+        });
       });
     });
   }
 
-  return gitPushAll(gitRepo);
-})
-.then(function() {
-  console.log('Ensuring Dockerhub builds.');
-  return dockerHubBuilder.handleRepository(dockerHubAuth, dockerHubInfo, buildTagName);
+  return gitPushAll(gitRepo)
+  .then(function() {
+    console.log('Ensuring Dockerhub builds.');
+    return dockerHubBuilder.handleRepository(dockerHubAuth, dockerHubInfo, buildTagName);
+  });
 })
 .then(function() {
   console.log('Done.');
