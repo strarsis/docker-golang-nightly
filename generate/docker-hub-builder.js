@@ -26,13 +26,23 @@ const BUILD_TAG_SOURCE_TYPE_TAG    = 'Tag';
 const BUILD_TAG_SOURCE_TYPE_BRANCH = 'Branch';
 
 
-var isPendingBuild = function(build) {
-  return (build.status == BUILD_STATUS_QUEUED || build.status == BUILD_STATUS_BUILDING);
+var isQueuedBuild   = function(build) {
+  return (build.status == BUILD_STATUS_QUEUED);
+};
+var isBuildingBuild = function(build) {
+  return (build.status == BUILD_STATUS_BUILDING);
+};
+var isSucceedingBuild = function(build) {
+  return (build.status == BUILD_STATUS_SUCCEEDED);
 };
 
+// pending build = either queued or building, not failed nor succeeded (yet)
+var isPendingBuild = function(build) {
+  return (isQueuedBuild(build) || isBuildingBuild(build));
+};
 // passing build = either successful or pending, not failed
 var isPassingBuild = function(build) {
-  return (isPendingBuild(build) || build.status == BUILD_STATUS_SUCCEEDED);
+  return (isPendingBuild(build) || isSucceedingBuild(build));
 };
 
 
@@ -64,6 +74,24 @@ var compareBuildTagDetails = function(buildTag, details) {
 };
 
 
+var dockerfileFromBuildDetails = function(buildDetails) {
+  if(buildDetails === undefined) {
+    throw('build details undefined');
+    return false;
+  }
+  var buildResults = buildDetails.build_results;
+  console.log(buildResults);
+  if(buildResults === undefined) {
+    throw('build_results missing for given build details.');
+    return false;
+  }
+  var dockerfile = buildResults.dockerfile_contents;
+  if(dockerfile.length == 0 || dockerfile === undefined) {
+    throw('Dockerfile undefined for given build details.');
+    return false;
+  }
+  return dockerfile;
+};
 var getCommitShaFromDockerfile = function(dockerfile) {
   return dockerfile.match(/ENV GOLANG_BUILD_SHA[ ]+(.*)/)[1];
 };
@@ -98,7 +126,7 @@ var findBuildsByTagName = function(builds, tagName) {
 // determines the build tagname from the build details
 var tagNameFromBuildDetails = function(buildDetails) {
 
-  var dockerfile = buildDetails.build_results.dockerfile_contents;
+  var dockerfile = dockerfileFromBuildDetails(buildDetails);
   var version    = getVersionFromDockerfile(dockerfile);
   var sha        = getCommitShaFromDockerfile(dockerfile);
 
@@ -169,6 +197,7 @@ var reuseTagBuild       = function(username, repository, details) {
 
 
 const CHECK_BUILD_OK         =  10;
+const CHECK_BUILD_OK_QUEUED  =   3; // (open issue with queued builds having no dockerfile_contents)
 const CHECK_BUILD_OK_PENDING =   2;
 const CHECK_BUILD_NOTFOUND   =  -1;
 const CHECK_BUILD_DIFFER     =  -2;
@@ -177,7 +206,11 @@ const CHECK_BUILD_DIFFER     =  -2;
 var handleLatestBuild = function(username, repository, buildsSortedDesc, buildTagName) {
   return checkLatestBuild(username, repository, buildsSortedDesc, buildTagName)
   .then(function(result) {
-    if(result.status == CHECK_BUILD_OK || result.status == CHECK_BUILD_OK_PENDING) {
+    if(result.status == CHECK_BUILD_OK || result.status == CHECK_BUILD_OK_PENDING || result.status == CHECK_BUILD_OK_QUEUED) {
+      if(result.status == CHECK_BUILD_OK_QUEUED) {
+        console.log("Open Dockerhub API issue: Queued builds have no dockerfile_contents field. It isn't possible to determine nightly version, skipped.");
+        return;
+      }
       if(result.status == CHECK_BUILD_OK_PENDING) {
         console.log("Last 'latest' build had been already triggered + is pending, skipped.");
         return;
@@ -249,7 +282,13 @@ var checkLatestBuild = function(username, repository, buildsSortedDesc, buildTag
     var lastLatestBuildTagName = tagNameFromBuildDetails(lastLatestBuildDetails)
     if(lastLatestBuildTagName == buildTagName) {
 
+      if(isQueuedBuild(lastLatestBuild)) {
+        console.log('pending (queued)');
+        return { status: CHECK_BUILD_OK_QUEUED };
+      }
+
       if(isPendingBuild(lastLatestBuild)) {
+        console.log('pending (building)');
         return { status: CHECK_BUILD_OK_PENDING };
       }
 
