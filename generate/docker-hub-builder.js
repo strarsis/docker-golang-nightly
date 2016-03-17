@@ -219,10 +219,13 @@ var handleLatestBuild = function(username, repository, buildsSortedDesc, buildTa
     }
     // Trigger with master branch for 'latest' build
     console.log("Last 'latest' build uses not recent enough build tag (latest: '" + result.latestBuildTagName + "', last tag: '" + buildTagName + "'.");
-    return triggerLatestBuild(username, repository);
+    // explicitly specify the source tag to ensure last commit is the right one
+    return triggerTaggedBuild(username, repository, buildTagName, 'latest');
   });
 };
 
+
+// currently unused
 var triggerLatestBuild = function(username, repository) {
   return reuseTagBuild(username, repository, {
     name:        'latest',
@@ -254,16 +257,17 @@ var handleTaggedBuild = function(username, repository, buildsSortedDesc, buildTa
   });
 };
 
-var triggerTaggedBuild = function(username, repository, buildTagName) {
+var triggerTaggedBuild = function(username, repository, repoTagName, dockerTagName) {
   return reuseTagBuild(username, repository, {
-    source_name: buildTagName,
+    name:        dockerTagName,
+    source_name: repoTagName,
     source_type: BUILD_TAG_SOURCE_TYPE_TAG
   })
   .then(function() {
-    console.log("Triggered tagged build with tag '" + buildTagName + "'.");
+    console.log("Triggered tagged build '" + dockerTagName + "' with tag '" + repoTagName + "'.");
   })
   .catch(function(err) {
-    console.log("Error triggering tagged build with tag '" + buildTagName + "', error: " + err);
+    console.log("Error triggering tagged build '" + dockerTagName + "' with tag '" + repoTagName + "', error: " + err);
   });
 };
 
