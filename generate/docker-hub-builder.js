@@ -80,7 +80,6 @@ var dockerfileFromBuildDetails = function(buildDetails) {
     return false;
   }
   var buildResults = buildDetails.build_results;
-  console.log(buildResults);
   if(buildResults === undefined) {
     throw('build_results missing for given build details.');
     return false;
