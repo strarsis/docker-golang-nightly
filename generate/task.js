@@ -152,21 +152,12 @@ function(sha, version, gitRepoAndGitTags) {
       console.log('Committing + tagging new Dockerfile...');
       return gitAddCommit(gitRepo, 'Dockerfile', gitInfo, 'Update Dockerfile for nightly build ' + nightlyVersion, buildTagName)
       .then(function() {
-
-        return gitPushAll(gitRepo)
-        .then(function() {
-          console.log('Ensuring Dockerhub builds.');
-          return dockerHubBuilder.handleRepository(dockerHubAuth, dockerHubInfo, buildTagName);
-        });
+        return pushAndEnsure(gitRepo, buildTagName);
       });
     });
   }
 
-  return gitPushAll(gitRepo)
-  .then(function() {
-    console.log('Ensuring Dockerhub builds.');
-    return dockerHubBuilder.handleRepository(dockerHubAuth, dockerHubInfo, buildTagName);
-  });
+  return pushAndEnsure(gitRepo, buildTagName);
 })
 .then(function() {
   console.log('Done.');
@@ -174,6 +165,15 @@ function(sha, version, gitRepoAndGitTags) {
 .catch(function(err) {
   console.log('Error: ' + err);
 });
+
+var pushAndEnsure = function(gitRepo, buildTagName) {
+  console.log('Pushing new nightly releases to Github repository...');
+  return gitPushAll(gitRepo)
+  .then(function() {
+    console.log('Ensuring Dockerhub builds...');
+    return dockerHubBuilder.handleRepository(dockerHubAuth, dockerHubInfo, buildTagName);
+  });
+};
 
 var regexpBuildTag = new RegExp('^' + helper.buildTagPrefix);
 var onlyBuildTag   = function(tag) {
