@@ -2,7 +2,7 @@
 FROM golang:latest
 
 # SHA of commit to build
-ENV GOLANG_BUILD_SHA    0cd9edf6e8346f63a39328c9361f4b44cee30189
+ENV GOLANG_BUILD_SHA    9149aa10cc2f7d3061303754ab45c55eff42ac89
 # Last stable version prior this commit
 ENV GOLANG_BASE_VERSION 1.6
 
