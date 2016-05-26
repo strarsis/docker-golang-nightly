@@ -211,9 +211,9 @@ var renderFile = function(templatePath, data) {
 var gitAddCommit = function(repo, fileToStage, gitInfo, commitMsg, tagName) {
   var index, oid;
 
-  return repo.openIndex()
-  .then(function(indexResult) {
-    index  = indexResult;
+  return repo.open()
+  .then(function(repoResult) {
+    index  = repoResult;
 
     // this file is in the root of the directory and doesn't need a full path
     index.addByPath(fileToStage);
