@@ -86,6 +86,7 @@ var dockerfileFromBuildDetails = function(buildDetails) {
   }
   var dockerfile = buildResults.dockerfile_contents;
   if(dockerfile.length == 0 || dockerfile === undefined) {
+    // issue https://github.com/docker/hub-feedback/issues/608
     throw('Dockerfile undefined for given build details, build probably pending.');
     return false;
   }
