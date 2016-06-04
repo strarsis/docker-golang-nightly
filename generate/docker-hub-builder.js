@@ -86,7 +86,7 @@ var dockerfileFromBuildDetails = function(buildDetails) {
   }
   var dockerfile = buildResults.dockerfile_contents;
   if(dockerfile.length == 0 || dockerfile === undefined) {
-    throw('Dockerfile undefined for given build details.');
+    throw('Dockerfile undefined for given build details, build probably pending.');
     return false;
   }
   return dockerfile;
